@@ -6,8 +6,357 @@
     <link href="css/style.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <title>Countries</title>
-    <script src="scripts/nav.js"></script>
 </head>
-<body class="" style="font-family:Georgia, 'Times New Roman', Times, serif">
+<body class="bg-gray-400 h-screen flex flex-col align-middle justify-center" style="font-family:Georgia, 'Times New Roman', Times, serif">
+    <div class="container bg-gray-200 mx-auto flex flex-col h-full relative">
+        <!-- TOP BAR -->
+        <nav class="flex flex-row justify-between items-center p-5 my-5 md:mx-5">
+            <h1 class="text-2xl font-bold cursor-pointer" id="caption"> Countries</h1>
+            <button id="searchButton" class="bg-gray-500 text-white px-5 py-2 rounded-full">
+                <i class="fa fa-search"></i>
+                <span>Search</span>
+            </button>
+        </nav>
+        <!-- TABLE - COUNTRIES -->
+        <article class="grow overflow-y-scroll">
+            <table class="border-collapse table-auto w-full max-w-[1000px] mx-auto mb-10" id="tableCountries">
+                <thead class="">
+                    <tr class="">
+                        <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Name</th>
+                        <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Capital</th>
+                        <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Languages</th>
+                        <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Currency</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-gray-300">
+                </tbody>
+            </table>
+        </article>
+    </div>
+    <!-- MODAL - SEARCH -->
+    <div id="modalSearch" class="absolute top-0 left-0 w-full h-full z-50 bg-[rgba(0,0,0,0.3)] justify-center items-center" style="display: none">
+            <div class="p-5 md:p-10 bg-gray-300">
+            <form id="formSearch" class="flex flex-col">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Search by:</label>
+                    <div class="flex">
+                        <label class="inline-flex items-center mr-4">
+                            <input type="radio" class="form-radio text-blue-500" name="searchOption" value="name" checked>
+                            <span class="ml-2">Name</span>
+                        </label>
+                        <label class="inline-flex items-center mr-4">
+                            <input type="radio" class="form-radio text-blue-500" name="searchOption" value="capital">
+                            <span class="ml-2">Capital</span>
+                        </label>
+                        <label class="inline-flex items-center mr-4">
+                            <input type="radio" class="form-radio text-blue-500" name="searchOption" value="language">
+                            <span class="ml-2">Language</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" class="form-radio text-blue-500" name="searchOption" value="currency">
+                            <span class="ml-2">Currency</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">Search Term:</label>
+                    <input type="text" id="searchTerm" class="w-full border rounded-full px-3 py-2 focus:outline-none focus:border-blue-500" placeholder="Enter search term">
+                </div>
+                <div class="mb-4">
+                    <button type="submit" id="submitSearchForm" class="bg-gray-500 text-white px-5 py-2 rounded-full w-full">
+                        <i class="fa fa-search"></i>
+                        <span>Search</span>
+                    </button>
+                </div>
+                <div>
+                    <button type="button" id="closeSearchForm" class="bg-gray-400 text-white px-5 py-2 rounded-full w-full">
+                        <i class="fa fa-search"></i>
+                        <span>Close</span>
+                    </button>
+                </div>
+            </form>
+            </div>
+    </div>
+    <!-- MODAL - Country -->
+    <div id="modalCountry" class="absolute top-0 left-0 w-full h-full z-40 p-10 bg-[rgba(0,0,0,0.3)] justify-center items-center" style="display: none">
+        <div class="p-5 bg-gray-300 relative">
+            <button id="closeCountryModal" class="bg-[rgba(0,0,0,0.75)] text-white absolute top-0 right-0 translate-x-[-20px] translate-y-[20px] w-9 h-9 rounded-full flex items-center justify-center align-middle">
+                <i class="fa fa-close"></i>
+            </button>
+            <p id="temp">
 
+            </p>
+        </div>
+    </div>
+    <script>
+        async function fetchAllCountries() 
+        {
+            let data = await fetch("https://restcountries.com/v3.1/all");
+
+            let countries = await data.json();
+            countries.sort((a, b) => (a.name.common > b.name.common) ? 1 : -1);
+
+            return countries;
+        }
+    
+        async function fetchCountriesByName(name) 
+        {
+            let data = await fetch("https://restcountries.com/v3.1/name/" + name);
+            
+            if (data.status === 404) {
+                return null;
+            }
+
+            let countries = await data.json();
+            countries.sort((a, b) => (a.name.common > b.name.common) ? 1 : -1);
+
+            return countries;
+        }
+    
+        async function fetchCountriesByCapitol(capitol)
+        {
+            let data = await fetch("https://restcountries.com/v3.1/capital/" + capitol);
+            
+            if (data.status === 404) {
+                return null;
+            }
+    
+            let countries = await data.json();
+            countries.sort((a, b) => (a.name.common > b.name.common) ? 1 : -1);
+
+            return countries;
+        }
+    
+        async function fetchCountriesByLanguage(language)
+        {
+            let data = await fetch("https://restcountries.com/v3.1/lang/" + language);
+            
+            if (data.status === 404) {
+                return null;
+            }
+    
+            let countries = await data.json();
+            countries.sort((a, b) => (a.name.common > b.name.common) ? 1 : -1);
+
+            return countries;
+        }
+    
+        async function fetchCountriesByCurrency(currency)
+        {
+            let data = await fetch("https://restcountries.com/v3.1/currency/" + currency);
+            
+            if (data.status === 404) {
+                return null;
+            }
+    
+            let countries = await data.json();
+            countries.sort((a, b) => (a.name.common > b.name.common) ? 1 : -1);
+
+            return countries;
+        }
+    
+        async function fillEverything()
+        {
+            fetchAllCountries().then(countries => {
+                fillTable(countries);
+            });
+        }
+    
+        async function fillBasedOnName(name)
+        {
+            let countries = await fetchCountriesByName(name);
+    
+            if (countries === null) {
+                alert("No results found for name \"" + name + "\"");
+                return false;
+            }
+    
+            fillTable(countries);
+            return true;
+        }
+    
+        async function fillBasedOnCapitol(capitol)
+        {
+            let countries = await fetchCountriesByCapitol(capitol);
+    
+            if (countries === null) {
+                alert("No results found for capitol \"" + capitol + "\"");
+                return false;
+            }
+    
+            fillTable(countries);
+            return true;
+        }
+    
+        async function fillBasedOnLanguage(language)
+        {
+            let countries = await fetchCountriesByLanguage(language);
+    
+            if (countries === null) {
+                alert("No results found for language \"" + language + "\"");
+                return false;
+            }
+    
+            fillTable(countries);
+            return true;
+        }
+    
+        async function fillBasedOnCurrency(currency)
+        {
+            let countries = await fetchCountriesByCurrency(currency);
+    
+            if (countries === null) {
+                alert("No results found for currency \"" + currency + "\"");
+                return false;
+            }
+    
+            fillTable(countries);
+            return true;
+        }
+    
+        function fillTable(countries)
+        {
+            let table = document.getElementById("tableCountries");
+            let tableBody = table.getElementsByTagName("tbody")[0];
+            tableBody.innerHTML = "";
+    
+            for (let i = 0; i < countries.length; i++) 
+            {
+                let row = tableBody.insertRow(i);
+    
+                let cell1 = row.insertCell(0);
+                cell1.className = "cursor-pointer border-b border-gray-400 p-4 pl-8";
+                cell1.textContent = countries[i].name.common + " " + countries[i].flag;
+                cell1.addEventListener("click", function () {
+                    showCountrySpecifics(countries[i].name.common);
+                });
+    
+                let cell2 = row.insertCell(1);
+                cell2.className = "cursor-pointer border-b border-gray-400 p-4 pl-8";
+                cell2.textContent = countries[i].capital;
+                cell2.addEventListener("click", function () {
+                    showCountrySpecifics(countries[i].name.common);
+                });
+    
+                let cell3 = row.insertCell(2);
+                cell3.className = "border-b border-gray-400 p-4 pl-8";
+                for (let langCode in countries[i].languages) {
+                    let langAnchor = document.createElement("a");
+                    langAnchor.textContent = langCode;
+                    langAnchor.className = "cursor-pointer hover:text-gray-700 uppercase mr-2 mb-2";
+                    langAnchor.title = countries[i].languages[langCode];
+                    langAnchor.addEventListener("click", function () {
+                        fillBasedOnLanguage(langCode);
+                    });
+                    cell3.appendChild(langAnchor);
+                }
+    
+                // Create and populate the fourth cell (Currency)
+                let cell4 = row.insertCell(3);
+                cell4.className = "border-b border-gray-400 p-4 pl-8";
+                for (let currencyCode in countries[i].currencies) {
+                    let currencyAnchor = document.createElement("a");
+                    currencyAnchor.textContent = currencyCode;
+                    currencyAnchor.className = "cursor-pointer hover:text-gray-700 mr-2 mb-2";
+                    currencyAnchor.title = countries[i].currencies[currencyCode].name;
+                    currencyAnchor.addEventListener("click", function () {
+                        fillBasedOnCurrency(currencyCode);
+                    });
+                    cell4.appendChild(currencyAnchor);
+                }
+            }
+        }
+
+        async function showCountrySpecifics(countryName)
+        {
+            console.log("Showing specifics for country \"" + countryName + "\"");
+            const countries = await fetchCountriesByName(countryName);
+            const country = countries[0];
+
+            const modal = document.getElementById("modalCountry");
+
+            document.getElementById("temp").innerHTML = JSON.stringify(country, null, 2);
+
+            modal.style.display = "flex";
+        }
+
+        //Fill table with all countries
+        document.getElementById("caption").addEventListener("click", function(){
+            fillEverything();
+        });
+    
+        // Show search modal
+        document.getElementById("searchButton").addEventListener("click", function(){
+            document.getElementById('modalSearch').style.display = 'flex';
+        });
+    
+        //Hide search modal
+        document.getElementById("closeSearchForm").addEventListener("click", function(){
+            document.getElementById('modalSearch').style.display = 'none';
+        });
+
+        document.getElementById("closeCountryModal").addEventListener("click", function(){
+            document.getElementById('modalCountry').style.display = 'none';
+        });
+    
+        //Submit search
+        document.getElementById("formSearch").addEventListener("submit", function(event){
+            event.preventDefault();
+    
+            const searchOption = document.querySelector('input[name="searchOption"]:checked').value;
+    
+            const searchTerm = document.getElementById("searchTerm").value;
+    
+            if(searchTerm.trim() == "")
+            {
+                alert("Please enter a search term");
+                return;
+            }
+    
+            switch(searchOption)
+            {
+                case "name":
+                    fillBasedOnName(searchTerm).then(result => {
+                        if(result)
+                        {
+                            document.getElementById('modalSearch').style.display = 'none';
+                        };
+                    });
+                    break;
+                case "capital":
+                    fillBasedOnCapitol(searchTerm).then(result => {
+                        if(result)
+                        {
+                            document.getElementById('modalSearch').style.display = 'none';
+                        };
+                    });
+                    break;
+                case "language":
+                    fillBasedOnLanguage(searchTerm).then(result => {
+                        if(result)
+                        {
+                            document.getElementById('modalSearch').style.display = 'none';
+                        };
+                    });
+                    break;
+                case "currency":
+                    fillBasedOnCurrency(searchTerm).then(result => {
+                        if(result)
+                        {
+                            document.getElementById('modalSearch').style.display = 'none';
+                        };
+                    });
+                    break;
+                default:
+                    alert("Please select correct search option");
+                    return;
+            }
+        });
+
+        //When page loaded
+        window.addEventListener('load', function () {
+            fillEverything();
+        });
+        
+    </script>
 </body>
