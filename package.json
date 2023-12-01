@@ -1,0 +1,14 @@
+{
+  "name": "via-countries",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "tail-watch": "npx tailwindcss -i ./src/css/input.css -o ./src/css/style.css --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.3.5"
+  }
+}
