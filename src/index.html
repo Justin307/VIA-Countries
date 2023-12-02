@@ -2,16 +2,24 @@
 <html lang="en-us">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
     <link href="css/style.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <title>Countries</title>
+    <link rel="stylesheet" type="text/css" href="https://js.api.here.com/v3/3.1/mapsjs-ui.css" />
+    <script src="https://js.api.here.com/v3/3.1/mapsjs-core.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://js.api.here.com/v3/3.1/mapsjs-core-legacy.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://js.api.here.com/v3/3.1/mapsjs-service.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://js.api.here.com/v3/3.1/mapsjs-service-legacy.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-ui.js"></script>
+    <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"></script>
+    <title>Countries API Search</title>
 </head>
 <body class="bg-gray-400 h-screen flex flex-col align-middle justify-center" style="font-family:Georgia, 'Times New Roman', Times, serif">
     <div class="container bg-gray-200 mx-auto flex flex-col h-full relative">
         <!-- TOP BAR -->
         <nav class="flex flex-row justify-between items-center p-5 my-5 md:mx-5">
-            <h1 class="text-2xl font-bold cursor-pointer" id="caption"> Countries</h1>
+            <h1 class="text-2xl font-bold cursor-pointer" id="caption">Countries API Search</h1>
             <button id="searchButton" class="bg-gray-500 text-white px-5 py-2 rounded-full">
                 <i class="fa fa-search"></i>
                 <span>Search</span>
@@ -79,16 +87,55 @@
     </div>
     <!-- MODAL - Country -->
     <div id="modalCountry" class="absolute top-0 left-0 w-full h-full z-40 p-10 bg-[rgba(0,0,0,0.3)] justify-center items-center" style="display: none">
-        <div class="p-5 bg-gray-300 relative">
-            <button id="closeCountryModal" class="bg-[rgba(0,0,0,0.75)] text-white absolute top-0 right-0 translate-x-[-20px] translate-y-[20px] w-9 h-9 rounded-full flex items-center justify-center align-middle">
+        <div class="container p-5 md:p-10 bg-gray-300 relative max-h-[100vh] overflow-y-scroll">
+            <button id="closeCountryModal" class="bg-[rgba(0,0,0,0.65)] text-white absolute top-0 right-0 translate-x-[-15px] translate-y-[15px] w-9 h-9 rounded-full flex items-center justify-center align-middle">
                 <i class="fa fa-close"></i>
             </button>
-            <p id="temp">
-
-            </p>
+            <div class="flex flex-col sm:flex-row">
+                <div class="flex flex-col basis-1/2 p-5">
+                    <div class="flex flex-col xl:flex-row align-bottom ">
+                        <span id="cName" class="text-2xl font-bold mr-2"></span>
+                        <span id="cOfficialName" class="text-2xl mb-2"></span>
+                    </div>
+                    <div class="flex flex-row mb-2 ">
+                        <span class="text-lg font-semibold mr-2">Capital city: </span>
+                        <span id="cCapitalCity" class="text-lg"></span>
+                    </div>
+                    <div id="cBorders" class="flex flex-row flex-wrap mb-2">
+                    </div>
+                    <span class="font-semibold mb-2">Languages:</span>
+                    <table class="border-collapse table-auto mb-2">
+                        <thead>
+                            <tr>
+                                <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Shortcut</th>
+                                <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cLanguages" class="bg-gray-300">
+                        </tbody>
+                    </table>
+                    <span class="font-semibold mb-2">Currencies:</span>
+                    <table class="border-collapse table-auto mb-2">
+                        <thead>
+                            <tr>
+                                <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Shortcut</th>
+                                <th class="border-b border-gray-500 font-bold p-4 pl-8 pt-0 pb-3 text-left">Name</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cCurrencies" class="bg-gray-300">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="flex flex-col basis-1/2 p-5">
+                    <img id="cFlag" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_the_Taliban.svg/320px-Flag_of_the_Taliban.svg.png" alt="flag" class="hidden">
+                    <div id="map" class="w-full h-[400px]">
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script>
+        //Fetch countries from API
         async function fetchAllCountries() 
         {
             let data = await fetch("https://restcountries.com/v3.1/all");
@@ -99,6 +146,7 @@
             return countries;
         }
     
+        //Ferch countries from API by name
         async function fetchCountriesByName(name) 
         {
             let data = await fetch("https://restcountries.com/v3.1/name/" + name);
@@ -113,7 +161,8 @@
             return countries;
         }
     
-        async function fetchCountriesByCapitol(capitol)
+        //Fetch countries from API by capital
+        async function fetchCountriesByCapital(capitol)
         {
             let data = await fetch("https://restcountries.com/v3.1/capital/" + capitol);
             
@@ -127,6 +176,7 @@
             return countries;
         }
     
+        //Fetch countries from API by language
         async function fetchCountriesByLanguage(language)
         {
             let data = await fetch("https://restcountries.com/v3.1/lang/" + language);
@@ -141,6 +191,7 @@
             return countries;
         }
     
+        //Fetch countries from API by currency
         async function fetchCountriesByCurrency(currency)
         {
             let data = await fetch("https://restcountries.com/v3.1/currency/" + currency);
@@ -155,6 +206,7 @@
             return countries;
         }
     
+        //Fill table with all countries
         async function fillEverything()
         {
             fetchAllCountries().then(countries => {
@@ -162,6 +214,7 @@
             });
         }
     
+        //Fill table with countries based on name
         async function fillBasedOnName(name)
         {
             let countries = await fetchCountriesByName(name);
@@ -175,9 +228,10 @@
             return true;
         }
     
-        async function fillBasedOnCapitol(capitol)
+        //Fill table with countries based on capital
+        async function fillBasedOnCapital(capitol)
         {
-            let countries = await fetchCountriesByCapitol(capitol);
+            let countries = await fetchCountriesByCapital(capitol);
     
             if (countries === null) {
                 alert("No results found for capitol \"" + capitol + "\"");
@@ -188,6 +242,7 @@
             return true;
         }
     
+        //Fill table with countries based on language
         async function fillBasedOnLanguage(language)
         {
             let countries = await fetchCountriesByLanguage(language);
@@ -200,7 +255,8 @@
             fillTable(countries);
             return true;
         }
-    
+
+        //Fill table with countries based on currency
         async function fillBasedOnCurrency(currency)
         {
             let countries = await fetchCountriesByCurrency(currency);
@@ -213,7 +269,8 @@
             fillTable(countries);
             return true;
         }
-    
+
+        //Fill table with countries
         function fillTable(countries)
         {
             let table = document.getElementById("tableCountries");
@@ -251,7 +308,6 @@
                     cell3.appendChild(langAnchor);
                 }
     
-                // Create and populate the fourth cell (Currency)
                 let cell4 = row.insertCell(3);
                 cell4.className = "border-b border-gray-400 p-4 pl-8";
                 for (let currencyCode in countries[i].currencies) {
@@ -267,6 +323,7 @@
             }
         }
 
+        //Show country specifics modal
         async function showCountrySpecifics(countryName)
         {
             console.log("Showing specifics for country \"" + countryName + "\"");
@@ -275,7 +332,89 @@
 
             const modal = document.getElementById("modalCountry");
 
-            document.getElementById("temp").innerHTML = JSON.stringify(country, null, 2);
+            //Name
+            document.getElementById("cName").textContent = country.name.common;
+            //Official name
+            document.getElementById("cOfficialName").textContent = "(" + country.name.official + ")";
+            //Capital city
+            document.getElementById("cCapitalCity").textContent = country.capital;
+            //Borders
+            const cBorder = document.getElementById("cBorders");
+            cBorder.innerHTML = "<span class=\"mr-2 font-semibold\">Borders:</span>";
+            if (country.borders && country.borders.length > 0) {
+                for (let i = 0; i < country.borders.length; i++) {
+                const border = country.borders[i];
+                const borderAnchor = document.createElement("a");
+                borderAnchor.textContent = border;
+                borderAnchor.className = "cursor-pointer hover:text-gray-700 mr-2";
+                borderAnchor.addEventListener("click", function () {
+                    showCountrySpecifics(border);
+                });
+                cBorder.appendChild(borderAnchor);
+            }
+            }
+            else {
+                cBorder.innerHTML += "<span class=\"mr-2\">No borders</span>";
+            }
+            
+            //Languages
+            let tableBody = document.getElementById("cLanguages");
+            tableBody.innerHTML = "";
+            if(country.languages) {
+                for (let langCode in country.languages) {
+                    let row = tableBody.insertRow();
+                    row.className = "cursor-pointer";
+
+                    let cell1 = row.insertCell(0);
+                    cell1.className = "border-b border-gray-400 p-4 pl-8 uppercase";
+                    cell1.textContent = langCode;
+
+                    let cell2 = row.insertCell(1);
+                    cell2.className = "border-b border-gray-400 p-4 pl-8";
+                    cell2.textContent = country.languages[langCode];
+
+                    row.addEventListener("click", function () {
+                        fillBasedOnLanguage(langCode);
+                        modal.style.display = "none";
+                    });
+                }
+            }
+            else {
+                tableBody.innerHTML = "<span class=\"ml-2 font-bold\">No languages</span>";
+            }
+            //Currencies
+            tableBody = document.getElementById("cCurrencies");
+            tableBody.innerHTML = "";
+            if (country.currencies) {
+                for (let curCode in country.currencies) {
+                    let row = tableBody.insertRow();
+                    row.className = "cursor-pointer";
+
+                    let cell1 = row.insertCell(0);
+                    cell1.className = "border-b border-gray-400 p-4 pl-8 uppercase";
+                    cell1.textContent = curCode;
+
+                    let cell2 = row.insertCell(1);
+                    cell2.className = "border-b border-gray-400 p-4 pl-8";
+                    cell2.textContent = country.currencies[curCode].name;
+
+                    row.addEventListener("click", function () {
+                        fillBasedOnCurrency(curCode);
+                        modal.style.display = "none";
+                    });
+                }
+            }
+            else {
+                tableBody.innerHTML = "<span class=\"ml-2 font-bold\">No currencies</span>";
+            }
+            //Flag image
+            document.getElementById("cFlag").src = country.flags.png;
+            //Map
+            moveMap(country.latlng[0], country.latlng[1]);
+            if(country.capitalInfo.latlng)
+            {
+                placeNewMarker(country.capitalInfo.latlng[0], country.capitalInfo.latlng[1])
+            }
 
             modal.style.display = "flex";
         }
@@ -295,6 +434,7 @@
             document.getElementById('modalSearch').style.display = 'none';
         });
 
+        //Hide country specifics modal
         document.getElementById("closeCountryModal").addEventListener("click", function(){
             document.getElementById('modalCountry').style.display = 'none';
         });
@@ -324,7 +464,7 @@
                     });
                     break;
                 case "capital":
-                    fillBasedOnCapitol(searchTerm).then(result => {
+                    fillBasedOnCapital(searchTerm).then(result => {
                         if(result)
                         {
                             document.getElementById('modalSearch').style.display = 'none';
@@ -353,9 +493,42 @@
             }
         });
 
-        //When page loaded
-        window.addEventListener('load', function () {
+        var map;
+
+        function moveMap(lat, lng) {
+            map.setCenter({lat: lat, lng: lng});
+            map.setZoom(5);
+        }
+
+        function placeNewMarker(lat, lng) {
+            map.removeObjects(map.getObjects());
+            let marker = new H.map.Marker({lat: lat, lng: lng});
+            map.addObject(marker);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
             fillEverything();
+
+            let platform = new H.service.Platform({
+                apikey: "-AC9rvgqmRExvO1vpBg2nW8CXAGFWCMy4KJPsS-RB9M"
+            });
+
+            let defaultLayers = platform.createDefaultLayers();
+
+            map = new H.Map(
+                document.getElementById('map'),
+                defaultLayers.raster.normal.map,
+                {
+                zoom: 10,
+                center: { lat: 52.5, lng: 13.4 },
+                engineType: H.map.render.RenderEngine.EngineType.P2D
+                });
+
+            window.addEventListener('resize', () => map.getViewPort().resize());
+
+            let behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+
+            let ui = H.ui.UI.createDefault(map, defaultLayers);
         });
         
     </script>
